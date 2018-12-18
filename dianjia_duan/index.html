@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,initial-scale=1.0,width=device-width" />
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <link rel="stylesheet" type="text/css" href="./css/api.css" />
+    <link rel="stylesheet" type="text/css" href="./css/aui.css" />
+    <link rel="stylesheet" type="text/css" href="./css/aui-skin.css" />
+    <style media="screen">
+        .header-item {
+            display: none;
+        }
+
+        .header-item-active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <header id="header" class="aui-bar aui-bar-nav">
+        <div class="header-item header-item-active">
+            <div class="aui-title">阿凡提-商户端</div>
+            <a class="aui-pull-right aui-btn" tapmde onclick="openSetting()">设置</a>
+        </div>
+        <div class="header-item">
+            <div class="aui-title">订单管理</div>
+            <a class="aui-pull-right aui-btn" tapmde onclick="openSearch()">
+                <span class="aui-iconfont aui-icon-search"></span>
+            </a>
+        </div>
+        <div class="header-item">店面帮助</div>
+        <div class="header-item">商品管理</div>
+        <div class="header-item">财务管理</div>
+    </header>
+
+    <footer id="footer" class="aui-bar aui-bar-tab">
+        <div class="aui-bar-tab-item aui-active" tapmode>
+            <i class="ali-iconfont icon-shouye"></i>
+            <div class="aui-bar-tab-label">首页</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode>
+            <i class="ali-iconfont icon-icon_order"></i>
+            <div class="aui-bar-tab-label">订单管理</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode>
+            <!-- <div class="aui-badge">99</div> -->
+            <i class="ali-iconfont icon-bangzhu"></i>
+            <div class="aui-bar-tab-label">店面帮助</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode>
+            <!-- <div class="aui-dot"></div> -->
+            <i class="ali-iconfont icon-cf-c26"></i>
+            <div class="aui-bar-tab-label">商品管理</div>
+        </div>
+        <div class="aui-bar-tab-item" tapmode>
+            <!-- <div class="aui-dot"></div> -->
+            <i class="ali-iconfont icon-caiwuguanli"></i>
+            <div class="aui-bar-tab-label">财务管理</div>
+        </div>
+    </footer>
+</body>
+<script src="./script/api.js"></script>
+<script src="./script/fastclick.js"></script>
+<script src="./script/app.js"></script>
+<script src="./script/aui-tab.js"></script>
+<script>
+    $app.ready()
+    var isLogin = $api.getStorage('token');
+    var tab = null;
+    var tabArr = ['BarHome', 'BarOrders', 'BarHelp', 'BarItems', 'BarFinance'];
+    apiready = function() {
+        $app.fixStatusBar('header');
+        api.parseTapmode();
+        api.setStatusBarStyle({
+            style: 'light'
+        });
+        // 获取顶部导航的高度
+        var header = $api.byId('header');
+        var headerPos = $api.offset(header);
+        // 所有的header
+        var headers = $api.domAll(header, '.header-item');
+        // 获取底部的导航高度
+        var footer = $api.byId('footer');
+        var footerPos = $api.offset(footer);
+        // fream高度
+        var frameHeight = api.frameHeight - footerPos.h - headerPos.h;
+
+        if (!isLogin) {
+            api.openFrame({
+                name: 'BarHome',
+                url: './html/BarHome/indexFrm.html',
+                bounces: true,
+                rect: {
+                    x: 0,
+                    y: headerPos.h,
+                    w: 'auto',
+                    h: frameHeight
+                }
+            })
+        } else {
+            openLogin()
+        }
+        initTab();
+        // 监听home打开order页面事件
+        api.addEventListener({
+            name: 'selectOrder'
+        }, function(ret, err) {
+            if (ret.value.type) {
+                initTab(2)
+                api.openFrame({
+                    name: 'BarOrders',
+                    url: './html/BarOrders/indexFrm.html',
+                    pageParam: {
+                        type: ret.value.type
+                    },
+                    bounces: true,
+                    rect: {
+                        x: 0,
+                        y: headerPos.h,
+                        w: 'auto',
+                        h: frameHeight
+                    }
+                })
+                for (var s = 0; s < headers.length; s++) {
+                    if (s == 1) {
+                        $api.addCls(headers[s], 'header-item-active');
+                    } else {
+                        $api.removeCls(headers[s], 'header-item-active');
+                        api.setFrameAttr({
+                            name: tabArr[s],
+                            hidden: true
+                        });
+                    }
+                }
+            }
+        });
+
+        function initTab(index) {
+            tab = new auiTab({
+                element: document.getElementById("footer"),
+                index: index ? index : 1,
+                repeatClick: false
+            }, function(ret) {
+                var s = ret.index - 1;
+                for (i = 0; i < tabArr.length; i++) {
+                    if (tabArr[s] == tabArr[i]) {
+                        $api.addCls(headers[i], 'header-item-active');
+                        api.openFrame({
+                            name: tabArr[s],
+                            url: './html/' + tabArr[s] + '/indexFrm.html',
+                            bounces: true,
+                            rect: {
+                                x: 0,
+                                y: headerPos.h,
+                                w: 'auto',
+                                h: frameHeight
+                            }
+                        })
+                    } else {
+                        $api.removeCls(headers[i], 'header-item-active');
+                        api.setFrameAttr({
+                            name: tabArr[i],
+                            hidden: true
+                        });
+                    }
+                }
+            });
+        }
+        // 监听退出事件
+        api.addEventListener({
+            name: 'logout'
+        }, function() {
+            $api.clearStorage();
+            openLogin()
+        });
+    };
+
+    function openLogin() {
+        api.openFrame({
+            name: 'BaseLogin',
+            url: './html/BaseLogin/indexFrm.html',
+            bounces: false,
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            }
+        })
+    }
+
+    function openSetting() {
+        api.openWin({
+            name: 'BarHomeInfo',
+            url: './html/BarHomeInfo/indexWin.html',
+            bounces: true,
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            }
+        })
+    }
+
+    function openSearch() {
+        api.openWin({
+            name: 'BarOrdersSearch',
+            url: './html/BarOrdersSearch/indexWin.html',
+            bounces: true,
+            rect: {
+                x: 0,
+                y: 0,
+                w: 'auto',
+                h: 'auto'
+            }
+        })
+    }
+</script>
+
+</html>
